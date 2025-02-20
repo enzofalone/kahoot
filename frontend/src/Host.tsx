@@ -1,32 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 function Host() {
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [connection, setConnection] = useState(null);
-  const [roomCode, setRoomCode] = useState("");
+  const [connection, setConnection] = useState<WebSocket>();
+  const [roomCode, setRoomCode] = useState('');
   useEffect(() => {
     setLoading(true);
 
     // connect to host
-    const socket = new WebSocket("ws://localhost:3000/host", ["kahoot"]);
+    const socket = new WebSocket('ws://localhost:3000/host', ['kahoot']);
 
-    socket.addEventListener("open", (e) => {
-      // foo
+    socket.addEventListener('open', (e) => {
+      setConnection(socket);
     });
 
-    socket.addEventListener("message", async (e) => {
-      // bar
-      console.log("server message", e.data);
+    socket.addEventListener('message', async (e) => {
+      console.log('server message', e.data);
       const inEvent = await JSON.parse(e.data);
 
-      if (inEvent.event == "room_created") {
-        console.log("updated room code");
+      if (inEvent.event == 'room_created') {
         setRoomCode(inEvent.content.room_code);
       }
     });
 
-    socket.addEventListener("error", (e) => {
+    socket.addEventListener('error', (e) => {
       console.error(e);
     });
 
