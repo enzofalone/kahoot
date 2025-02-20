@@ -35,7 +35,8 @@ func NewHostHandler(logf func(format string, args ...interface{}), db *repo.Data
 
 func (h HostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{
-		Subprotocols: []string{"echo"},
+		Subprotocols:   []string{"kahoot"},
+		OriginPatterns: []string{"127.0.0.1:5173"},
 	})
 	if err != nil {
 		h.logf("%v", err)
@@ -43,8 +44,8 @@ func (h HostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer c.CloseNow()
 
-	if c.Subprotocol() != "echo" {
-		c.Close(websocket.StatusPolicyViolation, "client must speak the echo subprotocol")
+	if c.Subprotocol() != "kahoot" {
+		c.Close(websocket.StatusPolicyViolation, "client must speak the kahoot subprotocol")
 		return
 	}
 

@@ -27,7 +27,8 @@ func NewPlayerHandler(logf func(format string, args ...interface{}), rooms map[s
 
 func (p PlayerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{
-		Subprotocols: []string{"echo"},
+		Subprotocols:   []string{"kahoot-player"},
+		OriginPatterns: []string{"127.0.0.1:5173"},
 	})
 	if err != nil {
 		p.logf("%v", err)
@@ -35,7 +36,7 @@ func (p PlayerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer c.CloseNow()
 
-	if c.Subprotocol() != "echo" {
+	if c.Subprotocol() != "kahoot-player" {
 		c.Close(websocket.StatusPolicyViolation, "client must speak the echo subprotocol")
 		return
 	}
