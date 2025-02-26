@@ -3,6 +3,7 @@ export enum EventType {
   NEXT = 'event_next', // go to next question
   NEXT_READY = 'event_next_ready', // event to tell host is ready to click to next question
   QUESTION = 'event_question', // display question and answer bank
+  PROMPT = 'event_question_prompt', // display question only
   REVEAL = 'event_reveal', // reveal current question's answer
   REVEAL_SCORE = 'event_reveal_score', // reveal score of leaderboard
   FINISH = 'event_finish', // show results of game
@@ -11,6 +12,7 @@ export enum EventType {
   ANSWER = 'event_answer', // player answer
   JOIN = 'event_player_join', // player has joined
   DISCONNECT = 'event_player_disconnect', // player disconnected
+  ROOM_CREATED = 'room_created', // room created confirmation
 }
 
 export type Event = {
@@ -19,5 +21,5 @@ export type Event = {
 };
 
 export const createEvent = (eventType: EventType, content?: string) => {
-  return { event: eventType, content } as Event;
+  return JSON.stringify({ event: eventType, content } as Event);
 };

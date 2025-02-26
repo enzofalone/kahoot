@@ -9,16 +9,14 @@ import PlayerGame from './PlayerGame';
 import PlayerLobby from './PlayerLobby';
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <div className="bg-slate-700 w-full h-screen text-yellow-50">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<App />} />
-          <Route path="/host" element={<Host />} />
-          <Route path="/lobby" element={<PlayerLobby />} />
-          <Route path="/player/:roomId" element={<PlayerGame />} />
-        </Routes>
-      </BrowserRouter>
-    </div>
-  </StrictMode>
+  <div className="bg-slate-700 w-full h-screen text-yellow-50">
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<App />} />
+        <Route path="/host" element={<Host />} />
+        <Route path="/lobby" element={<PlayerLobby />} />
+        <Route path="/player/:roomId" element={<PlayerGame />} />
+      </Routes>
+    </BrowserRouter>
+  </div>
 );

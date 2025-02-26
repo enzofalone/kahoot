@@ -1,51 +1,30 @@
-import { useEffect, useState } from 'react';
+import HostLobby from './Host/HostLobby';
+import HostPrompt from './Host/HostPrompt';
+import HostQuestion from './Host/HostQuestion';
+import { HostContextProvider, useHostContext } from './lib/host';
+import Loading from './components/Loading/Loading';
+import { EventType } from './util/event';
 
 function Host() {
-  const [playing, setPlaying] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [connection, setConnection] = useState<WebSocket>();
-  const [roomCode, setRoomCode] = useState('');
-  useEffect(() => {
-    setLoading(true);
-
-    // connect to host
-    const socket = new WebSocket('ws://localhost:3000/host', ['kahoot']);
-
-    socket.addEventListener('open', (e) => {
-      setConnection(socket);
-    });
-
-    socket.addEventListener('message', async (e) => {
-      console.log('server message', e.data);
-      const inEvent = await JSON.parse(e.data);
-
-      if (inEvent.event == 'room_created') {
-        setRoomCode(inEvent.content.room_code);
-      }
-    });
-
-    socket.addEventListener('error', (e) => {
-      console.error(e);
-    });
-
-    setLoading(false);
-  }, []);
-
   return (
-    <>
-      <div>host</div>
-      {loading ?? <h1>Connecting to websocket...</h1>}
-      {playing ? (
-        <></>
-      ) : (
-        <>
-          <div>Ready to start game now!</div>
-          <div>Room code: {roomCode}</div>
-          <button onClick={() => setPlaying(true)}>Start</button>
-        </>
-      )}
-    </>
+    <HostContextProvider>
+      <Loading />
+      <HostStateManager />
+    </HostContextProvider>
   );
+}
+
+function HostStateManager() {
+  const { state } = useHostContext();
+
+  switch (state) {
+    case EventType.PROMPT:
+      return <HostPrompt />;
+    case EventType.QUESTION:
+      return <HostQuestion />;
+    default:
+      return <HostLobby />;
+  }
 }
 
 export default Host;

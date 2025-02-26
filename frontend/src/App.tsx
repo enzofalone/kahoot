@@ -9,7 +9,7 @@ function App({}: Props) {
         <div className="flex mb-5">
           <h1 className="text-5xl">fake kahoot</h1>
         </div>
-        <p>Start as</p>
+        <p>Start as </p>
         <div className="">
           <NavLink to={'/host'}>Host</NavLink>
           <NavLink to={'/lobby'}>Player</NavLink>
