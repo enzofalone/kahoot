@@ -165,12 +165,12 @@ func (h HostHandler) nextQuestion(roomID string) error {
 		return nil
 	}
 
-	room.Question.State = EVENT_QUESTION
+	room.Question.State = EVENT_QUESTION_PROMPT
 	room.Question.Index++
 
 	// send prompt only
 	promptEvent := &Event{
-		Event: EVENT_QUESTION,
+		Event: EVENT_QUESTION_PROMPT,
 		Content: struct {
 			Prompt string `json:"prompt"`
 			Sleep  int    `json:"sleep"`
@@ -203,7 +203,7 @@ func (h HostHandler) nextQuestion(roomID string) error {
 		Event: EVENT_QUESTION,
 		Content: struct {
 			QuestionPublic
-			Countdown int
+			Sleep int `json:"sleep"`
 		}{
 			QuestionPublic{
 				room.Bank.Questions[room.Question.Index].Prompt,
@@ -236,7 +236,7 @@ func (h HostHandler) nextQuestion(roomID string) error {
 				allAnsweredEvent := &Event{
 					Event: EVENT_ALL_ANSWERED,
 					Content: struct {
-						Countdown int
+						Sleep int `json:"sleep"`
 					}{
 						3000,
 					},
