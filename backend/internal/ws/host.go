@@ -53,7 +53,7 @@ func (h HostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	event := &Event{
 		Event: "room_created",
 		Content: struct {
-			RoomCode string `json:"room_code"`
+			RoomCode string `json:"roomCode"`
 			Success  bool   `json:"success"`
 		}{
 			RoomCode: currentRoom.ID,
@@ -68,7 +68,7 @@ func (h HostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.broadcaster.SendToHost(currentRoom.HostConn, eventJson); err != nil {
+	if err := h.broadcaster.SendTo(currentRoom.HostConn, eventJson); err != nil {
 		h.logf("Failed to send room creation event: %v", err)
 		return
 	}
@@ -132,9 +132,11 @@ func (h HostHandler) startGame(roomID string) error {
 	e := &Event{
 		Event: EVENT_START,
 		Content: struct {
-			Sleep int `json:"sleep"`
+			Sleep          int `json:"sleep"`
+			TotalQuestions int `json:"totalQuestions"`
 		}{
-			Sleep: 5000,
+			Sleep:          5000,
+			TotalQuestions: len(h.rooms[roomID].Bank.Questions),
 		},
 	}
 
@@ -312,7 +314,7 @@ func (h HostHandler) showLeaderboard(roomID string) error {
 		h.logf("showLeaderboard: failed to marshal event: %v", err)
 	}
 
-	if err := h.broadcaster.SendToHost(room.HostConn, eJson); err != nil {
+	if err := h.broadcaster.SendTo(room.HostConn, eJson); err != nil {
 		h.logf("showLeaderboard: failed to broadcast scores: %v", err)
 	}
 
@@ -329,8 +331,8 @@ func (h HostHandler) revealAnswer(roomID string) error {
 	e := &Event{
 		Event: EVENT_REVEAL,
 		Content: struct {
-			CorrectAnswer string         `json:"correct_answer"`
-			AnswerDist    map[string]int `json:"answer_distribution"`
+			CorrectAnswer string         `json:"correctAnswer"`
+			AnswerDist    map[string]int `json:"answerDistribution"`
 		}{
 			CorrectAnswer: room.Bank.Questions[room.Question.Index].CorrectAnswer,
 			AnswerDist:    room.Question.AnswerDist,
@@ -345,6 +347,8 @@ func (h HostHandler) revealAnswer(roomID string) error {
 	if err := h.broadcaster.BroadcastAll(room.HostConn, room.Players, eJson); err != nil {
 		h.logf("revealAnswer: failed to broadcast answer: %v", err)
 	}
+
+	// TODO: send to every player their score received from the answer
 
 	return nil
 }

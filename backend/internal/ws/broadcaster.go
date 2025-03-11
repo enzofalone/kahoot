@@ -18,9 +18,9 @@ func NewBroadcaster(logf func(format string, args ...interface{})) *Broadcaster 
 	}
 }
 
-// SendToHost sends a message to the host connection
-func (b *Broadcaster) SendToHost(hostConn *websocket.Conn, message []byte) error {
-	w, err := hostConn.Writer(context.Background(), websocket.MessageText)
+// SendTo sends a message to a connection
+func (b *Broadcaster) SendTo(conn *websocket.Conn, message []byte) error {
+	w, err := conn.Writer(context.Background(), websocket.MessageText)
 	if err != nil {
 		return fmt.Errorf("failed to get writer for host: %v", err)
 	}
@@ -28,6 +28,22 @@ func (b *Broadcaster) SendToHost(hostConn *websocket.Conn, message []byte) error
 
 	if _, err := w.Write(message); err != nil {
 		return fmt.Errorf("failed to write to host: %v", err)
+	}
+	return nil
+}
+
+// SendToArray sends a message to the array of connections
+func (b *Broadcaster) SendToArray(conns []*websocket.Conn, message []byte) error {
+	for i := 0; i < len(conns); i++ {
+		w, err := conns[i].Writer(context.Background(), websocket.MessageText)
+		if err != nil {
+			return fmt.Errorf("failed to get writer for host: %v", err)
+		}
+		defer w.Close()
+
+		if _, err := w.Write(message); err != nil {
+			return fmt.Errorf("failed to write to host: %v", err)
+		}
 	}
 	return nil
 }
@@ -51,7 +67,7 @@ func (b *Broadcaster) BroadcastToPlayers(players []*Player, message []byte) erro
 
 // BroadcastAll sends a message to both host and players
 func (b *Broadcaster) BroadcastAll(hostConn *websocket.Conn, players []*Player, message []byte) error {
-	if err := b.SendToHost(hostConn, message); err != nil {
+	if err := b.SendTo(hostConn, message); err != nil {
 		b.logf("broadcastAll: failed to send to host: %v", err)
 	}
 

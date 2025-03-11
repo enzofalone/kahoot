@@ -85,8 +85,10 @@ func (p PlayerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Send join confirmation
 	JoinConfirm := &Event{
-		Event:   EVENT_JOIN,
-		Content: playerID,
+		Event: EVENT_JOIN,
+		Content: &PlayerJoin{
+			PlayerId: playerID,
+		},
 	}
 
 	joinConfirmJson, err := json.Marshal(JoinConfirm)
@@ -95,7 +97,7 @@ func (p PlayerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := p.broadcaster.SendToHost(room.HostConn, joinConfirmJson); err != nil {
+	if err := p.broadcaster.SendTo(room.HostConn, joinConfirmJson); err != nil {
 		p.logf("Failed to send join confirmation: %v", err)
 		return
 	}
@@ -129,7 +131,7 @@ func (p PlayerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			if err := p.answerQuestion(player.ID, answer, roomID); err != nil {
+			if err := p.answerQuestion(playerID, answer, roomID); err != nil {
 				p.logf("Failed to process answer: %v", err)
 			}
 		}
@@ -137,8 +139,10 @@ func (p PlayerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// notify host player has disconnected
 	disconnectEvent := &Event{
-		Event:   EVENT_DISCONNECT,
-		Content: playerID,
+		Event: EVENT_DISCONNECT,
+		Content: &PlayerDisconnect{
+			ID: playerID,
+		},
 	}
 
 	disconnectEventJson, err := json.Marshal(&disconnectEvent)
@@ -147,7 +151,7 @@ func (p PlayerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := p.broadcaster.SendToHost(room.HostConn, disconnectEventJson); err != nil {
+	if err := p.broadcaster.SendTo(room.HostConn, disconnectEventJson); err != nil {
 		p.logf("Failed to send disconnect event to host: %v", err)
 		return
 	}
@@ -188,6 +192,24 @@ func (p PlayerHandler) answerQuestion(playerID string, answer string, roomID str
 
 	room.Question.Answers = append(room.Question.Answers, player.ID)
 	room.Question.AnswerDist[answer]++
+
+	// Send confirmation to host and player
+	answerEvent := &Event{
+		Event: EVENT_ANSWER,
+		Content: &PlayerAnswer{
+			ID: playerID,
+		},
+	}
+
+	answerEventJson, err := json.Marshal(answerEvent)
+	if err != nil {
+		return fmt.Errorf("error marshalling answer event confirmation json %w", err)
+	}
+
+	if err := p.broadcaster.SendToArray([]*websocket.Conn{p.rooms[roomID].HostConn, player.Conn}, answerEventJson); err != nil {
+		p.logf("Failed to send answer event to host: %v", err)
+		return err
+	}
 
 	return nil
 }

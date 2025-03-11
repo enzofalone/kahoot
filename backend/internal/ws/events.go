@@ -32,5 +32,17 @@ type Event struct {
 // QuestionPublic represents the public question data sent to players
 type QuestionPublic struct {
 	Prompt     string   `json:"prompt"`
-	AnswerBank []string `json:"answer_bank"`
+	AnswerBank []string `json:"answerBank"`
+}
+
+type PlayerJoin struct {
+	PlayerId string `json:"playerId"`
+}
+
+type PlayerAnswer struct {
+	ID string `json:"id"`
+}
+
+type PlayerDisconnect struct {
+	ID string `json:"id"`
 }
