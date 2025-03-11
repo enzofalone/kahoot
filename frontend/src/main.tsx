@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import { BrowserRouter, Route, Routes } from 'react-router';
 
-import Host from './Host';
+import Host from './Host/Host';
 import App from './App';
 import PlayerGame from './PlayerGame';
 import PlayerLobby from './PlayerLobby';
