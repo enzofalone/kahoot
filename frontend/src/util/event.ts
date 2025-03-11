@@ -1,3 +1,5 @@
+import { Player } from './player';
+
 export enum EventType {
   START = 'event_start', // start game
   NEXT = 'event_next', // go to next question
@@ -15,11 +17,69 @@ export enum EventType {
   ROOM_CREATED = 'room_created', // room created confirmation
 }
 
-export type Event = {
+export type BaseEvent<T> = {
   event: EventType;
-  content?: string;
+  content?: T;
 };
 
-export const createEvent = (eventType: EventType, content?: string) => {
-  return JSON.stringify({ event: eventType, content } as Event);
+export type EventStartGame = {
+  sleep: number;
+  totalQuestions: number;
+};
+
+export type EventPrompt = {
+  prompt: string;
+  sleep: number;
+};
+
+export type EventQuestion = {
+  prompt: string;
+  answerBank: string[];
+  sleep: number;
+};
+
+export type EventReveal = {
+  correctAnswer: string;
+  answerDistribution: Record<string, number>;
+};
+
+export type EventRevealLeaderboard = {
+  scores: Player[];
+};
+
+export type EventQuestionSkipped = {
+  sleep: number;
+};
+
+export type EventJoin = {
+  playerId: string;
+};
+
+export type EventDisconnect = EventJoin;
+
+export type EventAnswer = {
+  playerId: string;
+};
+
+export type EventRoomCreated = {
+  roomCode: string;
+};
+
+export type EventPayloads = {
+  [EventType.ROOM_CREATED]: EventRoomCreated;
+  [EventType.START]: EventStartGame;
+  [EventType.JOIN]: EventJoin;
+  [EventType.DISCONNECT]: EventDisconnect;
+  [EventType.PROMPT]: EventPrompt;
+  [EventType.QUESTION]: EventQuestion;
+  [EventType.SKIP_QUESTION]: EventQuestionSkipped;
+  [EventType.REVEAL_SCORE]: EventRevealLeaderboard;
+  [EventType.ANSWER]: EventAnswer;
+};
+
+export const createEvent = <T>(
+  eventType: EventType,
+  content?: BaseEvent<T>
+): string => {
+  return JSON.stringify({ event: eventType, content } as BaseEvent<T>);
 };
