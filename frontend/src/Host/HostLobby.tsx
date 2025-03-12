@@ -8,6 +8,7 @@ import { useGameStore, useLobbyStore } from '@lib/store';
 import playerIcon1 from '@assets/face-1.webp';
 import playerIcon2 from '@assets/face-2.webp';
 import { LoadingBar } from '@/components/Loading/LoadingBar';
+import { Player } from '@/util/player';
 
 type Props = {};
 function HostLobby({}: Props) {
@@ -40,13 +41,13 @@ function HostLobby({}: Props) {
 
     emitter.on(EventType.JOIN, (e) => {
       addPlayer(e.playerId);
-      console.log('player added');
     });
 
     emitter.on(EventType.DISCONNECT, (e) => {
+      console.log('removing playter');
       removePlayer(e.playerId);
     });
-  }, [emitter, players]);
+  }, []);
 
   const onStart = () => {
     send(EventType.START);
@@ -56,15 +57,16 @@ function HostLobby({}: Props) {
     <>
       {duration > 0 ? <LoadingBar duration={duration} /> : <></>}
       <div className="w-full h-full">
-        <div className="flex flex-col w-full h-full">
-          <div className="h-[30vh] flex flex-col justify-center place-items-center">
-            <div className="flex text-center items-baseline w-fit content-center place-items-center">
-              <h2 className="text-3xl font-bold mr-2">Join at</h2>
-              <h2 className="text-3xl">notkahoot.it</h2>
+        <div className="flex flex-col w-full h-full ">
+          <div className="h-[30vh] max-w-[80vw] text-center m-auto">
+            <div className="flex text-3xl">
+              <h2 className="font-bold mr-2">Join at</h2>
+              <h2>notkahoot.it</h2>
             </div>
             <h2 className="text-2xl">Game pin:</h2>
             <h1 className="text-4xl font-extrabold">
-              {roomCode.substring(0, 3)} {roomCode.substring(3, 6)}
+              {roomCode.substring(0, 3).toUpperCase()}{' '}
+              {roomCode.substring(3, 6).toUpperCase()}
             </h1>
             {countdown ? (
               <h1 className="mt-2 text-5xl font-extrabold">{countdown}</h1>
@@ -86,15 +88,16 @@ function HostLobby({}: Props) {
   );
 }
 
-function PlayerList({ players }: { players: string[] }) {
+function PlayerList({ players }: { players: Player[] }) {
   const playerIcons = [playerIcon1, playerIcon2];
 
   return (
     <div className="w-full flex gap-8 flex-wrap justify-center ">
       {players.map((player) => (
         <PlayerIcon
-          playerId={player}
-          playerIcon={playerIcons[Math.round(Math.random())]}
+          key={player.ID}
+          playerId={player.ID}
+          playerIcon={playerIcons[player.profilePic]}
         />
       ))}
     </div>

@@ -1,3 +1,4 @@
+import { Player } from '@/util/player';
 import { create } from 'zustand';
 
 type GameStore = {
@@ -25,9 +26,9 @@ type GameStore = {
 };
 
 type LobbyStore = {
-  players: string[];
-  addPlayer: (p: string) => void;
-  removePlayer: (p: string) => void;
+  players: Player[];
+  addPlayer: (pName: string) => void;
+  removePlayer: (pName: string) => void;
 };
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -57,12 +58,32 @@ export const useGameStore = create<GameStore>((set) => ({
 
 export const useLobbyStore = create<LobbyStore>((set) => ({
   players: [],
-  addPlayer: (p) =>
+  addPlayer: (ID) =>
     set((state) => {
-      if (!state.players.includes(p)) {
-        state.players.push(p);
+      let duplicate = false;
+      for (const player of state.players) {
+        duplicate = player.ID === ID;
+        if (duplicate) {
+          break;
+        }
       }
+
+      if (!duplicate) {
+        state.players.push({ ID, profilePic: Math.round(Math.random()) });
+      }
+
       return state;
     }),
-  removePlayer: () => {},
+  removePlayer: (ID) =>
+    set((state) => {
+      for (let i = 0; i < state.players.length; i++) {
+        const player = state.players[i];
+        if (player.ID === ID) {
+          state.players.splice(i, 1);
+          break;
+        }
+      }
+
+      return state;
+    }),
 }));

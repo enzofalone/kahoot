@@ -474,7 +474,7 @@ func (h HostHandler) createRoom(c *websocket.Conn) *Room {
 }
 
 func (h HostHandler) generateRoomID() string {
-	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 	const length = 6
 
 	for {

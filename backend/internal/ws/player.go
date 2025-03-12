@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/coder/websocket"
@@ -48,7 +49,7 @@ func (p PlayerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	roomID := r.Header.Get("Room-ID")
+	roomID := strings.ToLower(r.Header.Get("Room-ID"))
 	if len(roomID) == 0 {
 		c.Close(websocket.StatusPolicyViolation, "Room ID is required")
 		return

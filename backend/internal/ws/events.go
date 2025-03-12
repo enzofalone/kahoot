@@ -40,9 +40,9 @@ type PlayerJoin struct {
 }
 
 type PlayerAnswer struct {
-	ID string `json:"id"`
+	ID string `json:"playerId"`
 }
 
 type PlayerDisconnect struct {
-	ID string `json:"id"`
+	ID string `json:"playerId"`
 }
