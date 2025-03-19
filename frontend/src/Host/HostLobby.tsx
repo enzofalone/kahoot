@@ -9,6 +9,7 @@ import playerIcon1 from '@assets/face-1.webp';
 import playerIcon2 from '@assets/face-2.webp';
 import { LoadingBar } from '@/components/Loading/LoadingBar';
 import { Player } from '@/util/player';
+import { useShallow } from 'zustand/shallow';
 
 type Props = {};
 function HostLobby({}: Props) {
@@ -20,7 +21,7 @@ function HostLobby({}: Props) {
   const setRoomCode = useGameStore((state) => state.setRoomCode);
   const setTotalQuestions = useGameStore((state) => state.setTotalQuestions);
 
-  const players = useLobbyStore((state) => state.players);
+  const players = useLobbyStore(useShallow((state) => state.players));
   const addPlayer = useLobbyStore((state) => state.addPlayer);
   const removePlayer = useLobbyStore((state) => state.removePlayer);
 
@@ -40,11 +41,11 @@ function HostLobby({}: Props) {
     });
 
     emitter.on(EventType.JOIN, (e) => {
+      console.log('new player', e.playerId);
       addPlayer(e.playerId);
     });
 
     emitter.on(EventType.DISCONNECT, (e) => {
-      console.log('removing playter');
       removePlayer(e.playerId);
     });
   }, []);
@@ -57,8 +58,8 @@ function HostLobby({}: Props) {
     <>
       {duration > 0 ? <LoadingBar duration={duration} /> : <></>}
       <div className="w-full h-full">
-        <div className="flex flex-col w-full h-full ">
-          <div className="h-[30vh] max-w-[80vw] text-center m-auto">
+        <div className="flex flex-col w-full h-full">
+          <div className="h-[30vh] max-w-[80vw] flex flex-col justify-center items-center mx-auto">
             <div className="flex text-3xl">
               <h2 className="font-bold mr-2">Join at</h2>
               <h2>notkahoot.it</h2>
@@ -92,7 +93,7 @@ function PlayerList({ players }: { players: Player[] }) {
   const playerIcons = [playerIcon1, playerIcon2];
 
   return (
-    <div className="w-full flex gap-8 flex-wrap justify-center ">
+    <div className="w-full flex gap-20 flex-wrap justify-center ">
       {players.map((player) => (
         <PlayerIcon
           key={player.ID}
@@ -117,7 +118,7 @@ function PlayerIcon({
         className="rounded-full"
         src={playerIcon} // TODO: store this random number somewhere, add icons for the players
       ></img>
-      <span className="w-fit text-3xl">{playerId}</span>
+      <span className="w-fit text-3xl text-ellipsis">{playerId}</span>
     </div>
   );
 }
@@ -128,7 +129,9 @@ function PlayerCount({ playerCount }: { playerCount: number }) {
       <span className="w-fit h-fit font-bold text-6xl italic">
         {playerCount}
       </span>
-      <span className="font-bold tracking-wide">Players</span>
+      <span className="font-bold tracking-wide">
+        Player{playerCount != 1 ? 's' : ''}
+      </span>
     </div>
   );
 }

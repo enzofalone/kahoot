@@ -60,30 +60,22 @@ export const useLobbyStore = create<LobbyStore>((set) => ({
   players: [],
   addPlayer: (ID) =>
     set((state) => {
-      let duplicate = false;
-      for (const player of state.players) {
-        duplicate = player.ID === ID;
-        if (duplicate) {
-          break;
-        }
-      }
+      const duplicate = state.players.some((player) => player.ID === ID);
 
       if (!duplicate) {
-        state.players.push({ ID, profilePic: Math.round(Math.random()) });
+        return {
+          players: [
+            ...state.players,
+            { ID, profilePic: Math.round(Math.random()) },
+          ],
+        };
       }
 
       return state;
     }),
   removePlayer: (ID) =>
     set((state) => {
-      for (let i = 0; i < state.players.length; i++) {
-        const player = state.players[i];
-        if (player.ID === ID) {
-          state.players.splice(i, 1);
-          break;
-        }
-      }
-
-      return state;
+      const updatedPlayers = state.players.filter((player) => player.ID !== ID);
+      return { players: updatedPlayers };
     }),
 }));
