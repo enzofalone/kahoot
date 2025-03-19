@@ -13,6 +13,11 @@ type Player struct {
 	Conn   *websocket.Conn
 }
 
+type PlayerScore struct {
+	ID     string `json:"id"`
+	Points int    `json:"points"`
+}
+
 // Room represents a game room with connected players
 type Room struct {
 	ID       string

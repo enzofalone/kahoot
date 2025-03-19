@@ -2,6 +2,7 @@ package ws
 
 // Event types
 const (
+	EVENT_ROOM_CREATED    = "event_room_created"      // room created
 	EVENT_START           = "event_start"             // start game
 	EVENT_NEXT            = "event_next"              // go to next question
 	EVENT_NEXT_READY      = "event_next_ready"        // event to tell host is ready to click to next question
@@ -24,22 +25,25 @@ const (
 )
 
 // Event represents a WebSocket event message
-type Event struct {
-	Event   string      `json:"event"`
-	Content interface{} `json:"content"`
+type Event[T any] struct {
+	Event   string `json:"event"`
+	Content T      `json:"content"`
 }
 
 // QuestionPublic represents the public question data sent to players
 type QuestionPublic struct {
 	Prompt     string   `json:"prompt"`
 	AnswerBank []string `json:"answerBank"`
+	Sleep      int      `json:"sleep"`
 }
 
 type PlayerJoin struct {
 	PlayerId string `json:"playerId"`
 }
-
 type PlayerAnswer struct {
+	Answer string `json:"answer"`
+}
+type PlayerAnswerConfirmation struct {
 	ID string `json:"playerId"`
 }
 

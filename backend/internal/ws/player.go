@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
+
+	"slices"
 
 	"github.com/coder/websocket"
 )
@@ -49,7 +50,7 @@ func (p PlayerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	roomID := strings.ToLower(r.Header.Get("Room-ID"))
+	roomID := sanitizeRoomCode(r.Header.Get("Room-ID"))
 	if len(roomID) == 0 {
 		c.Close(websocket.StatusPolicyViolation, "Room ID is required")
 		return
@@ -85,14 +86,14 @@ func (p PlayerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer p.removePlayerFromRoom(player.ID, roomID)
 
 	// Send join confirmation
-	JoinConfirm := &Event{
+	joinConfirm := &Event[PlayerJoin]{
 		Event: EVENT_JOIN,
-		Content: &PlayerJoin{
+		Content: PlayerJoin{
 			PlayerId: playerID,
 		},
 	}
 
-	joinConfirmJson, err := json.Marshal(JoinConfirm)
+	joinConfirmJson, err := json.Marshal(joinConfirm)
 	if err != nil {
 		p.logf("Failed to marshal join confirmation: %v", err)
 		return
@@ -117,7 +118,7 @@ func (p PlayerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		var event Event
+		var event Event[json.RawMessage]
 		if err := json.Unmarshal(message, &event); err != nil {
 			p.logf("Failed to unmarshal event: %v", err)
 			continue
@@ -126,12 +127,12 @@ func (p PlayerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Handle player events
 		switch event.Event {
 		case EVENT_QUESTION:
-			answer, ok := event.Content.(string)
-			if !ok {
-				p.logf("Invalid answer format")
-				continue
+			var answerEvent Event[PlayerAnswer]
+			if err := json.Unmarshal(message, &answerEvent); err != nil {
+				p.logf("Failed to unmarshall answer: %v", err)
 			}
 
+			answer := answerEvent.Content.Answer
 			if err := p.answerQuestion(playerID, answer, roomID); err != nil {
 				p.logf("Failed to process answer: %v", err)
 			}
@@ -139,10 +140,10 @@ func (p PlayerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// notify host player has disconnected
-	disconnectEvent := &Event{
+	disconnectEvent := &Event[PlayerDisconnect]{
 		Event: EVENT_DISCONNECT,
-		Content: &PlayerDisconnect{
-			ID: playerID,
+		Content: PlayerDisconnect{
+			ID: player.ID,
 		},
 	}
 
@@ -179,11 +180,9 @@ func (p PlayerHandler) answerQuestion(playerID string, answer string, roomID str
 	}
 
 	// Check if player has already answered this question
-	for _, answeredID := range room.Question.Answers {
-		if answeredID == playerID {
-			p.logf("answerQuestion: player %s already answered question %d", playerID, room.Question.Index)
-			return fmt.Errorf("player %s already answered this question", playerID)
-		}
+	if slices.Contains(room.Question.Answers, playerID) {
+		p.logf("answerQuestion: player %s already answered question %d", playerID, room.Question.Index)
+		return fmt.Errorf("player %s already answered this question", playerID)
 	}
 
 	// Calculate score if the user answered correctly
@@ -195,9 +194,9 @@ func (p PlayerHandler) answerQuestion(playerID string, answer string, roomID str
 	room.Question.AnswerDist[answer]++
 
 	// Send confirmation to host and player
-	answerEvent := &Event{
+	answerEvent := &Event[PlayerAnswerConfirmation]{
 		Event: EVENT_ANSWER,
-		Content: &PlayerAnswer{
+		Content: PlayerAnswerConfirmation{
 			ID: playerID,
 		},
 	}
@@ -233,7 +232,7 @@ func (p PlayerHandler) removePlayerFromRoom(playerID string, roomID string) erro
 
 	for i, player := range room.Players {
 		if player.ID == playerID {
-			room.Players = append(room.Players[:i], room.Players[i+1:]...)
+			room.Players = slices.Delete(room.Players, i, i+1)
 			return nil
 		}
 	}

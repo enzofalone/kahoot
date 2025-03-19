@@ -36,7 +36,7 @@ func NewHostHandler(logf func(format string, args ...interface{}), db *repo.Data
 func (h HostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		Subprotocols:   []string{"kahoot"},
-		OriginPatterns: []string{"127.0.0.1:5173"},
+		OriginPatterns: []string{"127.0.0.1:5173", "localhost:5173"},
 	})
 	if err != nil {
 		h.logf("%v", err)
@@ -50,14 +50,10 @@ func (h HostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	currentRoom := h.createRoom(c)
-	event := &Event{
-		Event: "room_created",
-		Content: struct {
-			RoomCode string `json:"roomCode"`
-			Success  bool   `json:"success"`
-		}{
+	event := &Event[RoomCreated]{
+		Event: EVENT_ROOM_CREATED,
+		Content: RoomCreated{
 			RoomCode: currentRoom.ID,
-			Success:  true,
 		},
 	}
 	defer h.deleteRoom(currentRoom.ID)
@@ -75,6 +71,7 @@ func (h HostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	h.PrintRoomStatus()
 
+	// TODO: refactor into its own function (ListenMessages)
 	for {
 		_, reader, err := c.Reader(context.Background())
 		if err != nil {
@@ -88,7 +85,7 @@ func (h HostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		var event Event
+		var event Event[json.RawMessage]
 		if err := json.Unmarshal(message, &event); err != nil {
 			h.logf("Failed to unmarshal event: %v", err)
 			continue
@@ -129,12 +126,9 @@ func (h HostHandler) startGame(roomID string) error {
 		return fmt.Errorf("room %s not found", roomID)
 	}
 
-	e := &Event{
+	e := &Event[Start]{
 		Event: EVENT_START,
-		Content: struct {
-			Sleep          int `json:"sleep"`
-			TotalQuestions int `json:"totalQuestions"`
-		}{
+		Content: Start{
 			Sleep:          5000,
 			TotalQuestions: len(h.rooms[roomID].Bank.Questions),
 		},
@@ -171,12 +165,9 @@ func (h HostHandler) nextQuestion(roomID string) error {
 	room.Question.Index++
 
 	// send prompt only
-	promptEvent := &Event{
+	promptEvent := &Event[Prompt]{
 		Event: EVENT_QUESTION_PROMPT,
-		Content: struct {
-			Prompt string `json:"prompt"`
-			Sleep  int    `json:"sleep"`
-		}{
+		Content: Prompt{
 			Prompt: room.Bank.Questions[room.Question.Index].Prompt,
 			Sleep:  5000,
 		},
@@ -201,16 +192,11 @@ func (h HostHandler) nextQuestion(roomID string) error {
 	room.Skip.Used = false // Reset skip flag for new question
 	room.Skip.Channel = make(chan struct{})
 
-	e := &Event{
+	e := &Event[QuestionPublic]{
 		Event: EVENT_QUESTION,
-		Content: struct {
-			QuestionPublic
-			Sleep int `json:"sleep"`
-		}{
-			QuestionPublic{
-				room.Bank.Questions[room.Question.Index].Prompt,
-				room.Bank.Questions[room.Question.Index].AnswerBank,
-			},
+		Content: QuestionPublic{
+			room.Bank.Questions[room.Question.Index].Prompt,
+			room.Bank.Questions[room.Question.Index].AnswerBank,
 			20000,
 		},
 	}
@@ -235,11 +221,9 @@ func (h HostHandler) nextQuestion(roomID string) error {
 			if len(room.Question.Answers) == len(room.Players) {
 				h.logf("All players answered, proceeding to reveal")
 
-				allAnsweredEvent := &Event{
+				allAnsweredEvent := &Event[AllAnswered]{
 					Event: EVENT_ALL_ANSWERED,
-					Content: struct {
-						Sleep int `json:"sleep"`
-					}{
+					Content: AllAnswered{
 						3000,
 					},
 				}
@@ -276,14 +260,9 @@ func (h HostHandler) showLeaderboard(roomID string) error {
 	}
 
 	// Sort players by points in descending order
-	type playerScore struct {
-		ID     string `json:"id"`
-		Points int    `json:"points"`
-	}
-
-	scores := make([]playerScore, 0, len(room.Players))
+	scores := make([]PlayerScore, 0, len(room.Players))
 	for _, p := range room.Players {
-		scores = append(scores, playerScore{
+		scores = append(scores, PlayerScore{
 			ID:     p.ID,
 			Points: p.Points,
 		})
@@ -300,11 +279,9 @@ func (h HostHandler) showLeaderboard(roomID string) error {
 	}
 
 	room.Question.State = EVENT_REVEAL_SCORE
-	e := &Event{
+	e := &Event[RevealScore]{
 		Event: EVENT_REVEAL_SCORE,
-		Content: struct {
-			Scores []playerScore `json:"scores"`
-		}{
+		Content: RevealScore{
 			Scores: scores,
 		},
 	}
@@ -328,12 +305,9 @@ func (h HostHandler) revealAnswer(roomID string) error {
 	}
 
 	room.Question.State = EVENT_REVEAL
-	e := &Event{
+	e := &Event[Reveal]{
 		Event: EVENT_REVEAL,
-		Content: struct {
-			CorrectAnswer string         `json:"correctAnswer"`
-			AnswerDist    map[string]int `json:"answerDistribution"`
-		}{
+		Content: Reveal{
 			CorrectAnswer: room.Bank.Questions[room.Question.Index].CorrectAnswer,
 			AnswerDist:    room.Question.AnswerDist,
 		},
@@ -361,14 +335,9 @@ func (h HostHandler) revealResults(roomID string) error {
 	room.Question.State = EVENT_FINISH
 
 	// Sort players by points in descending order
-	type playerScore struct {
-		ID     string `json:"id"`
-		Points int    `json:"points"`
-	}
-
-	scores := make([]playerScore, 0, len(room.Players))
+	scores := make([]PlayerScore, 0, len(room.Players))
 	for _, p := range room.Players {
-		scores = append(scores, playerScore{
+		scores = append(scores, PlayerScore{
 			ID:     p.ID,
 			Points: p.Points,
 		})
@@ -384,12 +353,9 @@ func (h HostHandler) revealResults(roomID string) error {
 		scores = scores[:10]
 	}
 
-	e := &Event{
+	e := &Event[Finish]{
 		Event: EVENT_FINISH,
-		Content: struct {
-			Scores []playerScore `json:"scores"`
-			Sleep  int           `json:"sleep"`
-		}{
+		Content: Finish{
 			Scores: scores,
 			Sleep:  30000,
 		},
