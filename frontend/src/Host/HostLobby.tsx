@@ -11,8 +11,7 @@ import { LoadingBar } from '@/components/Loading/LoadingBar';
 import { Player } from '@/util/player';
 import { useShallow } from 'zustand/shallow';
 
-type Props = {};
-function HostLobby({}: Props) {
+function HostLobby() {
   const { emitter, send } = useWebSocketContext();
   const { startCountdown, countdown } = useCountdown();
   const [duration, setDuration] = useState(0);

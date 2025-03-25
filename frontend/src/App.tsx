@@ -1,8 +1,6 @@
 import { NavLink } from 'react-router';
 
-type Props = {};
-
-function App({}: Props) {
+function App() {
   return (
     <div className="w-full h-full flex flex-col justify-center items-center">
       <div className="w-fit flex justify-center flex-col items-center">

@@ -28,6 +28,14 @@ type WebSocketProviderProps = {
   children: ReactNode;
 };
 
+// Events that can change the screen
+const validStateEvents: Record<string, boolean> = {
+  [EventType.PROMPT]: true,
+  [EventType.QUESTION]: true,
+  [EventType.ROOM_CREATED]: true,
+  [EventType.REVEAL_SCORE]: true,
+};
+
 export const WebSocketContextProvider = ({
   children,
 }: WebSocketProviderProps) => {
@@ -50,7 +58,9 @@ export const WebSocketContextProvider = ({
         const inEvent = await JSON.parse(e.data);
         const { event } = inEvent;
 
-        setState(event);
+        if (validStateEvents[event]) {
+          setState(event);
+        }
 
         if (Object.values(EventType).includes(event)) {
           emitter.emit(event, inEvent.content);

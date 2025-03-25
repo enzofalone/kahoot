@@ -126,7 +126,7 @@ func (p PlayerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Handle player events
 		switch event.Event {
-		case EVENT_QUESTION:
+		case EVENT_ANSWER:
 			var answerEvent Event[PlayerAnswer]
 			if err := json.Unmarshal(message, &answerEvent); err != nil {
 				p.logf("Failed to unmarshall answer: %v", err)

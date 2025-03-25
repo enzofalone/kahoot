@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 type Event<T extends Record<string, any>> = {
   [K in keyof T]?: {
     subscribers: ((payload: T[K]) => void)[];

@@ -19,8 +19,6 @@ type GameStore = {
   totalQuestions: number;
   setTotalQuestions: (n: number) => void;
 
-  answers: number;
-  incrementAnswers: () => void;
   //   state: EventType;
   //   setState: (newState: EventType) => void;
 };
@@ -41,7 +39,7 @@ export const useGameStore = create<GameStore>((set) => ({
   roomCode: '',
   setRoomCode: (newRoomCode) => set({ roomCode: newRoomCode }),
 
-  clearQuestion: () => set({ prompt: '', answerBank: [], answers: 0 }),
+  clearQuestion: () => set({ prompt: '', answerBank: [] }),
 
   questionIndex: 0,
   incrementQuestionIndex: () =>
@@ -51,9 +49,6 @@ export const useGameStore = create<GameStore>((set) => ({
 
   totalQuestions: 0,
   setTotalQuestions: (n) => set({ totalQuestions: n }),
-
-  answers: 0,
-  incrementAnswers: () => set({ answers: 0 }),
 }));
 
 export const useLobbyStore = create<LobbyStore>((set) => ({

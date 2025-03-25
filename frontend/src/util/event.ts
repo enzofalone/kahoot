@@ -14,7 +14,7 @@ export enum EventType {
   ANSWER = 'event_answer', // player answer
   JOIN = 'event_player_join', // player has joined
   DISCONNECT = 'event_player_disconnect', // player disconnected
-  ROOM_CREATED = 'room_created', // room created confirmation
+  ROOM_CREATED = 'event_room_created', // room created confirmation
 }
 
 export type BaseEvent<T> = {
@@ -65,6 +65,10 @@ export type EventRoomCreated = {
   roomCode: string;
 };
 
+type EventAllAnswered = {
+  sleep: number;
+};
+
 export type EventPayloads = {
   [EventType.ROOM_CREATED]: EventRoomCreated;
   [EventType.START]: EventStartGame;
@@ -75,6 +79,8 @@ export type EventPayloads = {
   [EventType.SKIP_QUESTION]: EventQuestionSkipped;
   [EventType.REVEAL_SCORE]: EventRevealLeaderboard;
   [EventType.ANSWER]: EventAnswer;
+  [EventType.REVEAL]: EventReveal;
+  [EventType.ALL_ANSWERED]: EventAllAnswered;
 };
 
 export const createEvent = <T>(

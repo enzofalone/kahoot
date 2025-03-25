@@ -33,6 +33,10 @@ func NewHostHandler(logf func(format string, args ...interface{}), db *repo.Data
 	}
 }
 
+const ALL_ANSWERED_SLEEP = 3 * time.Second
+const START_GAME_SLEEP = 5 * time.Second
+const PROMPT_SLEEP = 5 * time.Second
+
 func (h HostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		Subprotocols:   []string{"kahoot"},
@@ -129,7 +133,7 @@ func (h HostHandler) startGame(roomID string) error {
 	e := &Event[Start]{
 		Event: EVENT_START,
 		Content: Start{
-			Sleep:          5000,
+			Sleep:          int(START_GAME_SLEEP) * 1000,
 			TotalQuestions: len(h.rooms[roomID].Bank.Questions),
 		},
 	}
@@ -143,7 +147,7 @@ func (h HostHandler) startGame(roomID string) error {
 		h.logf("startGame: failed to broadcast: %v", err)
 	}
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(START_GAME_SLEEP)
 	h.nextQuestion(roomID)
 
 	return nil
@@ -169,7 +173,7 @@ func (h HostHandler) nextQuestion(roomID string) error {
 		Event: EVENT_QUESTION_PROMPT,
 		Content: Prompt{
 			Prompt: room.Bank.Questions[room.Question.Index].Prompt,
-			Sleep:  5000,
+			Sleep:  int(PROMPT_SLEEP) * 1000,
 		},
 	}
 
@@ -183,7 +187,7 @@ func (h HostHandler) nextQuestion(roomID string) error {
 		h.logf("nextQuestion: failed to broadcast prompt: %v", err)
 	}
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(PROMPT_SLEEP)
 
 	room.Question.PostedAt = time.Now()
 	room.Question.Answers = []string{}
@@ -224,7 +228,7 @@ func (h HostHandler) nextQuestion(roomID string) error {
 				allAnsweredEvent := &Event[AllAnswered]{
 					Event: EVENT_ALL_ANSWERED,
 					Content: AllAnswered{
-						3000,
+						int(ALL_ANSWERED_SLEEP) * 1000,
 					},
 				}
 
@@ -237,7 +241,7 @@ func (h HostHandler) nextQuestion(roomID string) error {
 					h.logf("nextQuestion: failed to broadcast all answered event: %v", err)
 				}
 
-				time.Sleep(5 * time.Second)
+				time.Sleep(ALL_ANSWERED_SLEEP)
 				h.revealAnswer(roomID)
 				return nil
 			}
